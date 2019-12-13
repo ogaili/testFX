@@ -13,14 +13,26 @@ import java.util.*;
 
 @Component
 public class H2 {
+    //数据库连接URL
+    //private static final String JDBC_URL = "jdbc:h2:E:/Test/h2/bin/test";
+    private static final String JDBC_URL = "jdbc:h2:~/test";
+    //连接数据库时使用的用户名
+    private static final String USER = "sa";
+    //连接数据库时使用的密码
+    private static final String PASSWORD = "sa";
+    //连接H2数据库时使用的驱动类，org.h2.Driver这个类是由H2数据库自己提供的，在H2数据库的jar包中可以找到
+    private static final String DRIVER_CLASS="org.h2.Driver";
 
-    @Autowired
     private static JdbcTemplate jdbcTemplate;
 
     private static final String dbName = "test6";
 
     static {
-
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setUser(USER);
+        dataSource.setPassword(PASSWORD);
+        dataSource.setURL(JDBC_URL);
+        jdbcTemplate = new JdbcTemplate(dataSource);
 
         try {
             jdbcTemplate.queryForMap("select * from "+dbName+" limit 1");
@@ -77,10 +89,10 @@ public class H2 {
             jdbcTemplate.update("INSERT INTO "+dbName+" values(?,?)",null,s);
         }
 
-        List<Map<String, Object>> maps = jdbcTemplate.queryForList("SELECT * FROM "+dbName);
+       /* List<Map<String, Object>> maps = jdbcTemplate.queryForList("SELECT * FROM "+dbName);
         for (Map<String, Object> map : maps) {
             System.out.println(map);
-        }
+        }*/
     }
 
     /**

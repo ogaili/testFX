@@ -6,8 +6,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import service.SaveService;
 
@@ -18,11 +16,11 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.List;
 
-@org.springframework.stereotype.Controller
 public class Controller {
 
-    @Autowired
-    private H2 h2;
+    private H2 h2 = new H2();
+
+    private SaveService saveService = new SaveService();
 
     @FXML
     public TextField textField;
@@ -51,11 +49,11 @@ public class Controller {
     public void upload() throws Exception {
 //        读取文本数据
         LoadFile loadFile = new LoadFile();
+        loadFile.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         result = loadFile.showSelect();
 
     }
 
-    private SaveService saveService = new SaveService();
 
     int result;
     //上传文件窗口 点击x关闭有bug会退出整个系统
@@ -67,7 +65,11 @@ public class Controller {
         private JFileChooser fileChooser = new JFileChooser();
         private File selectedFile = null;
 
+
+
         public int showSelect() {
+
+
             int i = fileChooser.showOpenDialog(getContentPane());
             // 判断用户单击的是否为“打开”按钮
             if (i == JFileChooser.APPROVE_OPTION) {
@@ -114,6 +116,7 @@ public class Controller {
                 }
             });
             panel.add(button);
+
 
             add(panel, BorderLayout.NORTH);
             setVisible(true);

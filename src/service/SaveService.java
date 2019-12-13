@@ -11,9 +11,7 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.text.DecimalFormat;
@@ -21,15 +19,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Transactional
-@Service
+
 public class SaveService {
 
-    @Autowired
-    private H2 h2;
+    private H2 h2 = new H2();
 
     //将文件读取到集合并写入数据库   //差一个事务控制
-    public int save(File selectedFile) throws Exception{
+    public int save(File selectedFile) throws Exception {
         String fileName = selectedFile.getName();
 
         Set<String> set = new HashSet<>(h2.findAll());
@@ -39,13 +35,14 @@ public class SaveService {
 
             List<String> list = FileUtils.readLines(selectedFile, "utf-8");
 
-            //放入h2数据库中去重
             set.addAll(list);
-            h2.deleteAll();
-            h2.save(set);
+
+            //放入h2数据库中去重
+            Set<String> set1 = reset(set);
+            h2.save(set1);
 
         }
-        if (fileName.substring(fileName.lastIndexOf(".")+1).equals("xls")) {//Excel文件
+        if (fileName.substring(fileName.lastIndexOf(".") + 1).equals("xls")) {//Excel文件
 
             FileInputStream is = new FileInputStream(selectedFile);
             HSSFWorkbook excel = new HSSFWorkbook(is);
@@ -64,11 +61,10 @@ public class SaveService {
 
                 set.add(whatYourWant);
             }
-            h2.deleteAll();
-//            int i =1/0;
-            h2.save(set);
+            Set<String> set1 = reset(set);
+            h2.save(set1);
         }
-        if (fileName.substring(fileName.lastIndexOf(".")+1).equals("xlsx")) {
+        if (fileName.substring(fileName.lastIndexOf(".") + 1).equals("xlsx")) {
             FileInputStream is = new FileInputStream(selectedFile);
             XSSFWorkbook excel = new XSSFWorkbook(is);
             is.close();
@@ -86,9 +82,24 @@ public class SaveService {
 
                 set.add(whatYourWant);
             }
-            h2.deleteAll();
-            h2.save(set);
+            Set<String> set1 = reset(set);
+            h2.save(set1);
         }
         return 1;
+    }
+
+    private Set<String> reset(Set<String> set) {
+        Set<String> dbSet = new HashSet<>(h2.findAll());
+
+        Set<String> removeSet = new HashSet<>();
+
+        for (String s : set) {  //用户的数据 往数据库里添加 如果重复 则删除
+            boolean bool = dbSet.add(s); //false 代表数据重复
+            if (!bool) {
+                removeSet.add(s); //数据库中有的数据
+            }
+        }
+        set.removeAll(removeSet);
+        return set;
     }
 }
