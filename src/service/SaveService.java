@@ -1,19 +1,27 @@
 package service;
 
 
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
 import h2.H2;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.List;
@@ -24,14 +32,22 @@ public class SaveService {
 
     private H2 h2 = new H2();
 
-    //将文件读取到集合并写入数据库   //差一个事务控制
+    /**
+     * 保存到数据库
+     * @param selectedFile
+     * @return
+     * @throws Exception
+     */
     public int save(File selectedFile) throws Exception {
+
+        long start = System.currentTimeMillis();
+
         String fileName = selectedFile.getName();
 
-        Set<String> set = new HashSet<>(h2.findAll());
         //判断是文件类型
         if (fileName.substring(fileName.lastIndexOf(".") + 1).equals("txt")) {//文本类型
 
+            HashSet<String> set = new HashSet<>();
 
             List<String> list = FileUtils.readLines(selectedFile, "utf-8");
 
@@ -44,20 +60,23 @@ public class SaveService {
         }
         if (fileName.substring(fileName.lastIndexOf(".") + 1).equals("xls")) {//Excel文件
 
-            FileInputStream is = new FileInputStream(selectedFile);
-            HSSFWorkbook excel = new HSSFWorkbook(is);
-            is.close();
-            //获取第一个sheet
-            HSSFSheet sheet0 = excel.getSheetAt(0);
+            ExcelReader excelReader = new ExcelReader(selectedFile,0);
+            HSSFSheet sheet0 = (HSSFSheet) excelReader.getSheet();
 
+            Set<String> set = new HashSet<>(sheet0.getLastRowNum());
             //遍历 拿到每一行
             for (int rowIndex = 0; rowIndex <= sheet0.getLastRowNum(); rowIndex++) {
-
+                //获取第几行
                 HSSFRow row = sheet0.getRow(rowIndex);
-                DecimalFormat df = new DecimalFormat("0");
                 //取每一行第一个单元格的元素
                 HSSFCell cell = row.getCell(0);
-                String whatYourWant = df.format(cell.getNumericCellValue());
+
+                String whatYourWant = cell.getStringCellValue();
+
+                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                    DecimalFormat df = new DecimalFormat("0");
+                    whatYourWant = df.format(cell.getNumericCellValue());
+                }
 
                 set.add(whatYourWant);
             }
@@ -65,29 +84,43 @@ public class SaveService {
             h2.save(set1);
         }
         if (fileName.substring(fileName.lastIndexOf(".") + 1).equals("xlsx")) {
-            FileInputStream is = new FileInputStream(selectedFile);
-            XSSFWorkbook excel = new XSSFWorkbook(is);
-            is.close();
-            //获取第一个sheet
-            XSSFSheet sheet0 = excel.getSheetAt(0);
 
+            ExcelReader excelReader = new ExcelReader(selectedFile,0);
+            XSSFSheet sheet0 = (XSSFSheet) excelReader.getSheet();
+
+            Set<String> set = new HashSet<>(sheet0.getLastRowNum());
             //遍历 拿到每一行
             for (int rowIndex = 0; rowIndex <= sheet0.getLastRowNum(); rowIndex++) {
-
+                //获取第几行
                 XSSFRow row = sheet0.getRow(rowIndex);
-                DecimalFormat df = new DecimalFormat("0");
                 //取每一行第一个单元格的元素
                 XSSFCell cell = row.getCell(0);
-                String whatYourWant = df.format(cell.getNumericCellValue());
+
+                String whatYourWant = cell.getStringCellValue();
+
+                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                    DecimalFormat df = new DecimalFormat("0");
+                    whatYourWant = df.format(cell.getNumericCellValue());
+                }
 
                 set.add(whatYourWant);
             }
             Set<String> set1 = reset(set);
             h2.save(set1);
         }
+
+        long end = System.currentTimeMillis();
+        long s = (end- start) /1000;
+        System.out.println("一共执行"+ s + "秒");
+
         return 1;
     }
 
+    /**
+     * 去重
+     * @param set
+     * @return
+     */
     private Set<String> reset(Set<String> set) {
         Set<String> dbSet = new HashSet<>(h2.findAll());
 
@@ -102,4 +135,5 @@ public class SaveService {
         set.removeAll(removeSet);
         return set;
     }
+
 }

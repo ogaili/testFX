@@ -100,14 +100,14 @@ public class Controller {
                 public void actionPerformed(ActionEvent e) {
 
                     if (selectedFile != null) {
-                        JOptionPane.showMessageDialog(null, "正在上传，请不要中途关闭，否则会造成数据丢失,点击确认开始");
+                        JOptionPane.showMessageDialog(null, "上传途中不要关闭软件，否则可能造成数据丢失，点击确定开始长传，等待提示");
                         try {
                             saveService.save(selectedFile);
                             JOptionPane.showMessageDialog(null, "上传成功");
                             dispose();
                         } catch (Exception e1) {
                             e1.printStackTrace();
-                            JOptionPane.showMessageDialog(null, "上传失败，请检查文件格式是否正确");
+                            JOptionPane.showMessageDialog(null, "上传失败 \n"+e1.getMessage());
                             dispose();
                         }
                     } else {
